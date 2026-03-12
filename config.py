@@ -15,6 +15,7 @@ REQUIRED_TRAINING_KEYS = [
 OPTIONAL_TRAINING_KEYS = {
     "checkpoint_interval": "100",
     "output_dir": "",
+    "verbose": "full",
 }
 
 
@@ -28,6 +29,7 @@ class TrainingConfig(TypedDict):
     winner_file: str
     checkpoint_interval: int
     output_dir: str
+    verbose: str
 
 
 def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
@@ -83,6 +85,10 @@ def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
         "checkpoint_interval", OPTIONAL_TRAINING_KEYS["checkpoint_interval"],
     ))
     output_dir = section.get("output_dir", OPTIONAL_TRAINING_KEYS["output_dir"])
+    verbose = section.get("verbose", OPTIONAL_TRAINING_KEYS["verbose"])
+    if verbose not in ("full", "brief", "quiet"):
+        msg = f"Invalid 'verbose' value — expected full, brief, or quiet: {verbose}"
+        raise ValueError(msg)
 
     return TrainingConfig(
         classes=classes,
@@ -92,4 +98,5 @@ def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
         winner_file=section["winner_file"],
         checkpoint_interval=checkpoint_interval,
         output_dir=output_dir,
+        verbose=verbose,
     )
