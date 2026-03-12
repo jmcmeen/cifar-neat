@@ -3,18 +3,59 @@
 import hashlib
 import logging
 import pickle
+import tarfile
+import urllib.request
 from pathlib import Path
 
-import torchvision
-import torchvision.transforms as transforms
-from torch import Tensor
+import numpy as np
+from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+CIFAR10_URL = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
+CIFAR10_DIR = Path("./data/cifar-10-batches-py")
 
 CIFAR10_CLASSES = [
     "airplane", "automobile", "bird", "cat", "deer",
     "dog", "frog", "horse", "ship", "truck",
 ]
+
+TRAIN_BATCHES = [f"data_batch_{i}" for i in range(1, 6)]
+TEST_BATCHES = ["test_batch"]
+
+
+def _ensure_cifar10_downloaded(data_dir: Path = Path("./data")) -> None:
+    """Download and extract CIFAR-10 if not already present."""
+    if CIFAR10_DIR.exists():
+        return
+    data_dir.mkdir(parents=True, exist_ok=True)
+    archive = data_dir / "cifar-10-python.tar.gz"
+    if not archive.exists():
+        logger.info("Downloading CIFAR-10...")
+        urllib.request.urlretrieve(CIFAR10_URL, archive)  # noqa: S310
+    logger.info("Extracting CIFAR-10...")
+    with tarfile.open(archive, "r:gz") as tar:
+        tar.extractall(path=data_dir)  # noqa: S202
+
+
+def _load_cifar10_batch(path: Path) -> tuple[np.ndarray, list[int]]:
+    """Load a single CIFAR-10 batch file (pickle format)."""
+    with open(path, "rb") as f:
+        batch = pickle.load(f, encoding="bytes")  # noqa: S301
+    images: np.ndarray = batch[b"data"]
+    labels: list[int] = batch[b"labels"]
+    return images, labels
+
+
+def _process_image(raw: np.ndarray, img_size: int) -> list[float]:
+    """Convert a raw CIFAR-10 image (3072 uint8) to a grayscale, resized, [0,1] float list."""
+    # Raw is 3x32x32 flattened in CHW order
+    rgb = raw.reshape(3, 32, 32).transpose(1, 2, 0)  # HWC
+    img = Image.fromarray(rgb)
+    img = img.convert("L")  # grayscale
+    img = img.resize((img_size, img_size), Image.BILINEAR)
+    arr = np.asarray(img, dtype=np.float32) / 255.0
+    return arr.flatten().tolist()
 
 
 def _cache_path(classes: list[int], img_size: int, train: bool) -> Path:
@@ -48,32 +89,29 @@ def _load_cifar(
         with open(cache, "rb") as f:
             return pickle.load(f)  # noqa: S301
 
-    transform = transforms.Compose([
-        transforms.Grayscale(),
-        transforms.Resize((img_size, img_size)),
-        transforms.ToTensor(),
-    ])
+    _ensure_cifar10_downloaded()
 
-    dataset = torchvision.datasets.CIFAR10(
-        root="./data", train=train, download=True, transform=transform,
-    )
-
+    batches = TRAIN_BATCHES if train else TEST_BATCHES
     class_map = {c: i for i, c in enumerate(classes)}
     counts = {c: 0 for c in classes}
     images: list[list[float]] = []
     labels: list[int] = []
 
-    for img, label in dataset:
-        if label not in class_map:
+    for batch_name in batches:
+        raw_images, raw_labels = _load_cifar10_batch(CIFAR10_DIR / batch_name)
+        for raw, label in zip(raw_images, raw_labels):
+            if label not in class_map:
+                continue
+            if max_per_class is not None and counts[label] >= max_per_class:
+                if all(v >= max_per_class for v in counts.values()):
+                    break
+                continue
+            images.append(_process_image(raw, img_size))
+            labels.append(class_map[label])
+            counts[label] += 1
+        else:
             continue
-        if max_per_class is not None and counts[label] >= max_per_class:
-            if all(v >= max_per_class for v in counts.values()):
-                break
-            continue
-        assert isinstance(img, Tensor)
-        images.append(img.numpy().flatten().tolist())
-        labels.append(class_map[label])
-        counts[label] += 1
+        break  # break outer loop if inner loop broke
 
     if not images:
         split = "train" if train else "test"
