@@ -5,6 +5,7 @@ import csv
 import logging
 import multiprocessing
 import pickle
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -86,6 +87,73 @@ class CsvReporter(neat.reporting.BaseReporter):
             writer.writerow([self.generation, f"{best:.6f}", f"{mean:.6f}"])
 
 
+class SummaryReporter(neat.reporting.BaseReporter):
+    """Print a one-line summary every N generations."""
+
+    def __init__(self, interval: int) -> None:
+        self.interval = interval
+        self.generation = 0
+
+    def start_generation(self, generation: int) -> None:
+        self.generation = generation
+
+    def post_evaluate(
+        self,
+        config: neat.Config,
+        population: dict[int, Any],
+        species: Any,
+        best_genome: Any,
+    ) -> None:
+        if self.generation % self.interval != 0:
+            return
+        fitnesses = [g.fitness for g in population.values() if g.fitness is not None]
+        if not fitnesses:
+            return
+        best = max(fitnesses)
+        mean = sum(fitnesses) / len(fitnesses)
+        print(
+            f"Gen {self.generation:>6d} | best {best:.4f} | "
+            f"mean {mean:.4f} | pop {len(fitnesses)} | "
+            f"species {len(species.species)}",
+        )
+
+
+class ProgressReporter(neat.reporting.BaseReporter):
+    """Overwrite a single terminal line with current generation stats."""
+
+    def __init__(self, total_generations: int) -> None:
+        self.total = total_generations
+        self.generation = 0
+
+    def start_generation(self, generation: int) -> None:
+        self.generation = generation
+
+    def post_evaluate(
+        self,
+        config: neat.Config,
+        population: dict[int, Any],
+        species: Any,
+        best_genome: Any,
+    ) -> None:
+        fitnesses = [g.fitness for g in population.values() if g.fitness is not None]
+        if not fitnesses:
+            return
+        best = max(fitnesses)
+        pct = (self.generation + 1) / self.total * 100 if self.total else 0
+        sys.stdout.write(
+            f"\rGen {self.generation}/{self.total} ({pct:.0f}%) | best {best:.4f}",
+        )
+        sys.stdout.flush()
+
+    def found_solution(self, config: neat.Config, generation: int, best: Any) -> None:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+    def complete_extinction(self) -> None:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+
 def setup_output_dir(training: TrainingConfig) -> Path:
     """Create a timestamped output directory for this run."""
     base = training["output_dir"]
@@ -135,8 +203,16 @@ def run_evolution(
         population = neat.Population(neat_config)
 
     verbose = training["verbose"]
-    if verbose != "quiet":
-        population.add_reporter(neat.StdOutReporter(verbose == "full"))
+    if verbose == "full":
+        population.add_reporter(neat.StdOutReporter(True))
+    elif verbose == "brief":
+        population.add_reporter(neat.StdOutReporter(False))
+    elif verbose == "summary":
+        population.add_reporter(SummaryReporter(training["checkpoint_interval"]))
+    elif verbose == "progress":
+        population.add_reporter(ProgressReporter(training["generations"]))
+    # quiet: no stdout reporter
+
     stats = neat.StatisticsReporter()
     population.add_reporter(stats)
     population.add_reporter(CsvReporter(output_dir / "fitness.csv"))

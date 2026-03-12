@@ -86,8 +86,9 @@ def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
     ))
     output_dir = section.get("output_dir", OPTIONAL_TRAINING_KEYS["output_dir"])
     verbose = section.get("verbose", OPTIONAL_TRAINING_KEYS["verbose"])
-    if verbose not in ("full", "brief", "quiet"):
-        msg = f"Invalid 'verbose' value — expected full, brief, or quiet: {verbose}"
+    valid_verbose = ("full", "brief", "summary", "progress", "quiet")
+    if verbose not in valid_verbose:
+        msg = f"Invalid 'verbose' value — expected one of {', '.join(valid_verbose)}: {verbose}"
         raise ValueError(msg)
 
     return TrainingConfig(

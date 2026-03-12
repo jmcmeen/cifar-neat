@@ -142,7 +142,7 @@ class TestLoadTrainingConfig:
             "winner_file = winner.pkl\nverbose = loud",
         )
         path = _write_ini(ini)
-        with pytest.raises(ValueError, match="full, brief, or quiet"):
+        with pytest.raises(ValueError, match="full, brief, summary, progress, quiet"):
             load_training_config(path)
         Path(path).unlink()
 

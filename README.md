@@ -77,7 +77,12 @@ Optional `[Training]` keys:
 
 - `checkpoint_interval` — generations between checkpoints (default: 100, set in `config.ini`)
 - `output_dir` — fixed output directory (default: auto-generated `runs/YYYYMMDD_HHMMSS`)
-- `verbose` — NEAT stdout reporter verbosity: `full`, `brief`, or `quiet` (default: `full`)
+- `verbose` — NEAT stdout reporter verbosity (default: `full`):
+  - `full` — all output including per-species detail
+  - `brief` — generation summaries, no species breakdown
+  - `summary` — one line every `checkpoint_interval` generations
+  - `progress` — single updating line with generation and best fitness
+  - `quiet` — no stdout output (CSV still logs)
 
 CIFAR-10 class indices: 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 6=frog, 7=horse, 8=ship, 9=truck.
 
