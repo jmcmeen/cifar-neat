@@ -85,7 +85,7 @@ def main() -> None:
         "--config", default=CONFIG_PATH, help="Path to INI config file",
     )
     parser.add_argument(
-        "--genome", default=None, help="Path to saved genome (overrides config)",
+        "--genome", required=True, help="Path to saved genome (.pkl)",
     )
     parser.add_argument(
         "--output", "-o", default="network", help="Output filename without extension (default: network)",
@@ -103,9 +103,8 @@ def main() -> None:
     class_names = [CIFAR10_CLASSES[i] for i in classes]
     num_inputs = training["image_size"] ** 2
 
-    genome_path: str = args.genome or training["winner_file"]
-    logger.info("Loading genome from %s...", genome_path)
-    with open(genome_path, "rb") as f:
+    logger.info("Loading genome from %s...", args.genome)
+    with open(args.genome, "rb") as f:
         genome: Any = pickle.load(f)  # noqa: S301
 
     neat_config = neat.Config(
