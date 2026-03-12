@@ -64,14 +64,14 @@ python test.py --config path/to/config.ini   # use a different config
 
 All parameters live in `config.ini` (INI format, read directly by neat-python):
 
-| Section                | Key settings                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
-| `[Training]`           | `classes`, `image_size`, `samples_per_class`, `generations`, `winner_file`, `checkpoint_interval`, `output_dir`  |
-| `[NEAT]`               | `pop_size`, `fitness_threshold`, `fitness_criterion`                                                    |
-| `[DefaultGenome]`      | Mutation rates, weight/bias ranges, activation functions, structural mutation probabilities              |
-| `[DefaultSpeciesSet]`  | `compatibility_threshold` for speciation                                                                |
-| `[DefaultStagnation]`  | `max_stagnation`, `species_elitism`                                                                     |
-| `[DefaultReproduction]`| `elitism`, `survival_threshold`                                                                         |
+| Section                 | Key settings                                                                                                    |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `[Training]`            | `classes`, `image_size`, `samples_per_class`, `generations`, `winner_file`, `checkpoint_interval`, `output_dir`  |
+| `[NEAT]`                | `pop_size`, `fitness_threshold`, `fitness_criterion`                                                             |
+| `[DefaultGenome]`       | Mutation rates, weight/bias ranges, activation functions, structural mutation probabilities                      |
+| `[DefaultSpeciesSet]`   | `compatibility_threshold` for speciation                                                                         |
+| `[DefaultStagnation]`   | `max_stagnation`, `species_elitism`                                                                              |
+| `[DefaultReproduction]` | `elitism`, `survival_threshold`                                                                                  |
 
 Optional `[Training]` keys:
 - `checkpoint_interval` — generations between checkpoints (default: 100)
