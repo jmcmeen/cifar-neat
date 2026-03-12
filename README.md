@@ -49,16 +49,43 @@ python test.py --genome path/to/genome.pkl   # test a specific genome
 python test.py --config path/to/config.ini   # use a different config
 ```
 
+### Visualize
+
+Render the evolved network structure as a graph image.
+
+Requires [Graphviz](https://graphviz.org/download/) installed on your system:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install graphviz
+
+# macOS
+brew install graphviz
+```
+
+```bash
+python visualize.py
+```
+
+Outputs `network.png` showing input nodes, hidden nodes (with activation function), and output nodes with color-coded weighted connections.
+
+```bash
+python visualize.py --genome path/to/genome.pkl   # visualize a specific genome
+python visualize.py --output my-network            # custom output filename
+python visualize.py --config path/to/config.ini    # use a different config
+```
+
 ## Project Structure
 
-| File         | Purpose                                                      |
-| ------------ | ------------------------------------------------------------ |
-| `config.py`  | Config loading, validation, and `TrainingConfig` TypedDict   |
-| `data.py`    | Shared CIFAR-10 loading, transforms, and caching             |
-| `train.py`   | Training CLI with parallel eval, CSV logging, checkpointing  |
-| `test.py`    | Evaluation CLI with confusion matrix and per-class metrics   |
-| `config.ini` | All NEAT and training parameters                             |
-| `tests/`     | Unit tests for config, data, and evaluation                  |
+| File             | Purpose                                                      |
+| ---------------- | ------------------------------------------------------------ |
+| `config.py`      | Config loading, validation, and `TrainingConfig` TypedDict   |
+| `data.py`        | Shared CIFAR-10 loading, transforms, and caching             |
+| `train.py`       | Training CLI with parallel eval, CSV logging, checkpointing  |
+| `test.py`        | Evaluation CLI with confusion matrix and per-class metrics   |
+| `visualize.py`   | Network structure visualization using Graphviz               |
+| `config.ini`     | All NEAT and training parameters                             |
+| `tests/`         | Unit tests for config, data, and evaluation                  |
 
 ## Configuration
 

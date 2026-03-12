@@ -1,27 +1,29 @@
 """Tests for data module utilities."""
 
+from pathlib import Path
+
 from data import CIFAR10_CLASSES, _cache_path
 
 
 class TestCachePath:
     def test_deterministic(self) -> None:
-        p1 = _cache_path([0, 1], 8, train=True)
-        p2 = _cache_path([0, 1], 8, train=True)
+        p1 = _cache_path([0, 1], 8, train=True, data_dir=Path("data"))
+        p2 = _cache_path([0, 1], 8, train=True, data_dir=Path("data"))
         assert p1 == p2
 
     def test_differs_by_split(self) -> None:
-        train = _cache_path([0, 1], 8, train=True)
-        test = _cache_path([0, 1], 8, train=False)
+        train = _cache_path([0, 1], 8, train=True, data_dir=Path("data"))
+        test = _cache_path([0, 1], 8, train=False, data_dir=Path("data"))
         assert train != test
 
     def test_differs_by_classes(self) -> None:
-        p1 = _cache_path([0, 1], 8, train=True)
-        p2 = _cache_path([0, 2], 8, train=True)
+        p1 = _cache_path([0, 1], 8, train=True, data_dir=Path("data"))
+        p2 = _cache_path([0, 2], 8, train=True, data_dir=Path("data"))
         assert p1 != p2
 
     def test_differs_by_size(self) -> None:
-        p1 = _cache_path([0], 8, train=True)
-        p2 = _cache_path([0], 16, train=True)
+        p1 = _cache_path([0], 8, train=True, data_dir=Path("data"))
+        p2 = _cache_path([0], 16, train=True, data_dir=Path("data"))
         assert p1 != p2
 
 
