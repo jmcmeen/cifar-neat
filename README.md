@@ -34,7 +34,7 @@ python train.py --config path/to/config.ini       # use a different config
 python train.py --checkpoint runs/.../neat-checkpoint-50  # resume from checkpoint
 ```
 
-Genome evaluation is parallelized across CPU cores via `multiprocessing`.
+Genome evaluation is parallelized across CPU cores via `multiprocessing`. Set `workers` in `config.ini` to limit the number of processes.
 
 ### Test
 
@@ -83,6 +83,7 @@ Optional `[Training]` keys:
   - `summary` — one line every `checkpoint_interval` generations
   - `progress` — single updating line with generation and best fitness
   - `quiet` — no stdout output (CSV still logs)
+- `workers` — number of worker processes for genome evaluation (default: `0` = all CPU cores)
 
 CIFAR-10 class indices: 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 6=frog, 7=horse, 8=ship, 9=truck.
 

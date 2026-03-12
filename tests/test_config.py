@@ -103,6 +103,7 @@ class TestLoadTrainingConfig:
         assert cfg["winner_file"] == "winner.pkl"
         assert cfg["checkpoint_interval"] == 100  # default
         assert cfg["verbose"] == "full"  # default
+        assert cfg["workers"] == 0  # default
         Path(path).unlink()
 
     def test_missing_file(self) -> None:
@@ -154,6 +155,26 @@ class TestLoadTrainingConfig:
         path = _write_ini(ini)
         cfg = load_training_config(path)
         assert cfg["verbose"] == "quiet"
+        Path(path).unlink()
+
+    def test_custom_workers(self) -> None:
+        ini = VALID_INI.replace(
+            "winner_file = winner.pkl",
+            "winner_file = winner.pkl\nworkers = 4",
+        )
+        path = _write_ini(ini)
+        cfg = load_training_config(path)
+        assert cfg["workers"] == 4
+        Path(path).unlink()
+
+    def test_invalid_workers(self) -> None:
+        ini = VALID_INI.replace(
+            "winner_file = winner.pkl",
+            "winner_file = winner.pkl\nworkers = -1",
+        )
+        path = _write_ini(ini)
+        with pytest.raises(ValueError, match="workers"):
+            load_training_config(path)
         Path(path).unlink()
 
     def test_custom_checkpoint_interval(self) -> None:

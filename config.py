@@ -16,6 +16,7 @@ OPTIONAL_TRAINING_KEYS = {
     "checkpoint_interval": "100",
     "output_dir": "",
     "verbose": "full",
+    "workers": "0",
 }
 
 
@@ -30,6 +31,7 @@ class TrainingConfig(TypedDict):
     checkpoint_interval: int
     output_dir: str
     verbose: str
+    workers: int
 
 
 def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
@@ -91,6 +93,11 @@ def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
         msg = f"Invalid 'verbose' value — expected one of {', '.join(valid_verbose)}: {verbose}"
         raise ValueError(msg)
 
+    workers = int(section.get("workers", OPTIONAL_TRAINING_KEYS["workers"]))
+    if workers < 0:
+        msg = f"Invalid 'workers' value — must be 0 (auto) or a positive integer: {workers}"
+        raise ValueError(msg)
+
     return TrainingConfig(
         classes=classes,
         image_size=image_size,
@@ -100,4 +107,5 @@ def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
         checkpoint_interval=checkpoint_interval,
         output_dir=output_dir,
         verbose=verbose,
+        workers=workers,
     )

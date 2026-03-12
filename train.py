@@ -8,6 +8,7 @@ import pickle
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from multiprocessing.pool import Pool
 from typing import Any, Callable
 
 import neat
@@ -20,41 +21,54 @@ logger = logging.getLogger(__name__)
 EvalGenomes = Callable[[list[tuple[int, Any]], neat.Config], None]
 
 
-def _evaluate_genome(
-    args: tuple[Any, neat.Config, list[list[float]], list[int]],
-) -> float:
+_worker_images: list[list[float]] = []
+_worker_labels: list[int] = []
+
+
+def _init_worker(images: list[list[float]], labels: list[int]) -> None:
+    """Initialize shared data in each worker process."""
+    global _worker_images, _worker_labels
+    _worker_images = images
+    _worker_labels = labels
+
+
+def _evaluate_genome(args: tuple[Any, neat.Config]) -> float:
     """Evaluate a single genome (worker function for multiprocessing)."""
-    genome, config, images, labels = args
+    genome, config = args
     net = neat.nn.FeedForwardNetwork.create(genome, config)
     correct = 0
-    for img, label in zip(images, labels):
+    for img, label in zip(_worker_images, _worker_labels):
         output = net.activate(img)
         if output.index(max(output)) == label:
             correct += 1
-    return correct / len(labels)
+    return correct / len(_worker_labels)
 
 
 def make_eval_function(
     images: list[list[float]],
     labels: list[int],
     num_classes: int,
-) -> EvalGenomes:
-    """Return an eval_genomes function closed over the dataset.
+    workers: int | None = None,
+) -> tuple[EvalGenomes, Pool]:
+    """Return an eval_genomes function closed over the dataset and the pool.
 
-    Uses multiprocessing to evaluate genomes in parallel.
+    Uses multiprocessing to evaluate genomes in parallel. The dataset is
+    copied once into each worker via an initializer instead of being
+    serialized with every task.
     """
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(
+        processes=workers,
+        initializer=_init_worker,
+        initargs=(images, labels),
+    )
 
     def eval_genomes(genomes: list[tuple[int, Any]], config: neat.Config) -> None:
-        jobs = [
-            (genome, config, images, labels)
-            for _genome_id, genome in genomes
-        ]
+        jobs = [(genome, config) for _genome_id, genome in genomes]
         fitnesses = pool.map(_evaluate_genome, jobs)
         for (_genome_id, genome), fitness in zip(genomes, fitnesses):
             genome.fitness = fitness
 
-    return eval_genomes
+    return eval_genomes, pool
 
 
 class CsvReporter(neat.reporting.BaseReporter):
@@ -184,7 +198,9 @@ def run_evolution(
         "  %d samples, %d inputs, %d classes", len(images), num_inputs, num_classes,
     )
 
-    eval_fn = make_eval_function(images, labels, num_classes)
+    workers = training["workers"] if training["workers"] > 0 else None
+    eval_fn, pool = make_eval_function(images, labels, num_classes, workers)
+    logger.info("Worker processes: %d", workers or (multiprocessing.cpu_count() or 1))
 
     if checkpoint:
         logger.info("Restoring from checkpoint: %s", checkpoint)
@@ -227,7 +243,11 @@ def run_evolution(
 
     generations = training["generations"]
     logger.info("Running evolution for up to %d generations...", generations)
-    winner = population.run(eval_fn, generations)
+    try:
+        winner = population.run(eval_fn, generations)
+    finally:
+        pool.close()
+        pool.join()
 
     winner_file = output_dir / training["winner_file"]
     with open(winner_file, "wb") as f:
