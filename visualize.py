@@ -10,6 +10,7 @@ import neat
 
 from config import CONFIG_PATH, load_training_config
 from data import CIFAR10_CLASSES
+from train import CsvReporter, ProgressReporter, SummaryReporter  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,10 @@ def main() -> None:
         neat_config = population.config
         neat_config.genome_config.num_inputs = num_inputs
         neat_config.genome_config.num_outputs = num_classes
-        genome = max(population.population.values(), key=lambda g: g.fitness)
+        genome = max(
+            (g for g in population.population.values() if g.fitness is not None),
+            key=lambda g: g.fitness,
+        )
         logger.info("Best genome fitness: %.4f", genome.fitness)
     else:
         logger.info("Loading genome from %s...", args.genome)
