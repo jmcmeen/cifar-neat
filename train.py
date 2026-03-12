@@ -155,7 +155,7 @@ class ProgressReporter(neat.reporting.BaseReporter):
         best = max(fitnesses)
         pct = (self.generation + 1) / self.total * 100 if self.total else 0
         sys.stdout.write(
-            f"\rGen {self.generation}/{self.total} ({pct:.0f}%) | best {best:.4f}",
+            f"\rGen {self.generation}/{self.total} ({pct:.0f}%) | best {best:.4f} ",
         )
         sys.stdout.flush()
 
