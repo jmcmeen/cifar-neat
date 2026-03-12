@@ -1,10 +1,12 @@
 """Tests for the draw_genome visualization function."""
 
 from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import graphviz
+import pytest
 
-from visualize import draw_genome
+from visualize import draw_genome, main
 
 
 def _make_config(num_inputs: int, num_outputs: int) -> SimpleNamespace:
@@ -111,3 +113,77 @@ class TestDrawGenome:
         dot = draw_genome(genome, config)
         # Red for negative weights
         assert "#F44336" in dot.source
+
+
+class TestMainCheckpoint:
+    """Tests for the --checkpoint path through main()."""
+
+    def _make_population(self) -> MagicMock:
+        """Build a fake population returned by restore_checkpoint."""
+        genome_a = SimpleNamespace(
+            fitness=0.6,
+            nodes={0: _make_node()},
+            connections={},
+        )
+        genome_b = SimpleNamespace(
+            fitness=0.9,
+            nodes={0: _make_node()},
+            connections={},
+        )
+        pop = MagicMock()
+        pop.population = {1: genome_a, 2: genome_b}
+        pop.config.genome_config.num_inputs = 4
+        pop.config.genome_config.num_outputs = 2
+        pop.config.genome_config.input_keys = [-4, -3, -2, -1]
+        pop.config.genome_config.output_keys = [0, 1]
+        return pop
+
+    @patch("visualize.load_training_config")
+    @patch("visualize.neat.Checkpointer.restore_checkpoint")
+    def test_checkpoint_selects_best_genome(
+        self, mock_restore: MagicMock, mock_load_config: MagicMock, tmp_path: pytest.TempPathFactory,
+    ) -> None:
+        mock_load_config.return_value = {
+            "classes": [3, 5],
+            "image_size": 2,
+        }
+        pop = self._make_population()
+        mock_restore.return_value = pop
+
+        output = str(tmp_path / "test-net")
+        with patch("sys.argv", ["visualize.py", "--checkpoint", "fake-checkpoint", "--output", output]):
+            main()
+
+        mock_restore.assert_called_once_with("fake-checkpoint")
+        # Should have rendered an output file
+        assert (tmp_path / "test-net.png").exists()
+
+    @patch("visualize.load_training_config")
+    @patch("visualize.neat.Checkpointer.restore_checkpoint")
+    def test_checkpoint_uses_training_config_dimensions(
+        self, mock_restore: MagicMock, mock_load_config: MagicMock, tmp_path: pytest.TempPathFactory,
+    ) -> None:
+        mock_load_config.return_value = {
+            "classes": [3, 5],
+            "image_size": 2,
+        }
+        pop = self._make_population()
+        mock_restore.return_value = pop
+
+        output = str(tmp_path / "test-net")
+        with patch("sys.argv", ["visualize.py", "--checkpoint", "fake-checkpoint", "--output", output]):
+            main()
+
+        # num_inputs = image_size**2 = 4, num_outputs = len(classes) = 2
+        assert pop.config.genome_config.num_inputs == 4
+        assert pop.config.genome_config.num_outputs == 2
+
+    def test_genome_and_checkpoint_mutually_exclusive(self) -> None:
+        with patch("sys.argv", ["visualize.py", "--genome", "a.pkl", "--checkpoint", "b"]):
+            with pytest.raises(SystemExit):
+                main()
+
+    def test_requires_genome_or_checkpoint(self) -> None:
+        with patch("sys.argv", ["visualize.py"]):
+            with pytest.raises(SystemExit):
+                main()

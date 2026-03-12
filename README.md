@@ -66,12 +66,21 @@ brew install graphviz
 python visualize.py --genome runs/.../winner-genome.pkl
 ```
 
+Or visualize the best genome directly from a checkpoint:
+
+```bash
+python visualize.py --checkpoint runs/.../neat-checkpoint-50
+```
+
 Outputs `network.png` showing input nodes, hidden nodes (with activation function), and output nodes with color-coded weighted connections.
 
 ```bash
 python visualize.py --genome runs/.../winner-genome.pkl --output my-network
+python visualize.py --checkpoint runs/.../neat-checkpoint-50 --output my-network
 python visualize.py --genome runs/.../winner-genome.pkl --config path/to/config.ini
 ```
+
+Note: `--genome` and `--checkpoint` are mutually exclusive; exactly one must be provided.
 
 ## Project Structure
 

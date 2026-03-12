@@ -84,8 +84,12 @@ def main() -> None:
     parser.add_argument(
         "--config", default=CONFIG_PATH, help="Path to INI config file",
     )
-    parser.add_argument(
-        "--genome", required=True, help="Path to saved genome (.pkl)",
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--genome", help="Path to saved genome (.pkl)",
+    )
+    source.add_argument(
+        "--checkpoint", help="Path to a neat-checkpoint-* file",
     )
     parser.add_argument(
         "--output", "-o", default="network", help="Output filename without extension (default: network)",
@@ -103,19 +107,27 @@ def main() -> None:
     class_names = [CIFAR10_CLASSES[i] for i in classes]
     num_inputs = training["image_size"] ** 2
 
-    logger.info("Loading genome from %s...", args.genome)
-    with open(args.genome, "rb") as f:
-        genome: Any = pickle.load(f)  # noqa: S301
-
-    neat_config = neat.Config(
-        neat.DefaultGenome,
-        neat.DefaultReproduction,
-        neat.DefaultSpeciesSet,
-        neat.DefaultStagnation,
-        args.config,
-    )
-    neat_config.genome_config.num_inputs = num_inputs
-    neat_config.genome_config.num_outputs = num_classes
+    if args.checkpoint:
+        logger.info("Restoring checkpoint from %s...", args.checkpoint)
+        population = neat.Checkpointer.restore_checkpoint(args.checkpoint)
+        neat_config = population.config
+        neat_config.genome_config.num_inputs = num_inputs
+        neat_config.genome_config.num_outputs = num_classes
+        genome = max(population.population.values(), key=lambda g: g.fitness)
+        logger.info("Best genome fitness: %.4f", genome.fitness)
+    else:
+        logger.info("Loading genome from %s...", args.genome)
+        with open(args.genome, "rb") as f:
+            genome = pickle.load(f)  # noqa: S301
+        neat_config = neat.Config(
+            neat.DefaultGenome,
+            neat.DefaultReproduction,
+            neat.DefaultSpeciesSet,
+            neat.DefaultStagnation,
+            args.config,
+        )
+        neat_config.genome_config.num_inputs = num_inputs
+        neat_config.genome_config.num_outputs = num_classes
 
     input_labels = [f"px{i}" for i in range(num_inputs)]
     dot = draw_genome(genome, neat_config, input_labels, class_names)
