@@ -134,7 +134,9 @@ def run_evolution(
         neat_config.genome_config.num_outputs = num_classes
         population = neat.Population(neat_config)
 
-    population.add_reporter(neat.StdOutReporter(True))
+    verbose = training["verbose"]
+    if verbose != "quiet":
+        population.add_reporter(neat.StdOutReporter(verbose == "full"))
     stats = neat.StatisticsReporter()
     population.add_reporter(stats)
     population.add_reporter(CsvReporter(output_dir / "fitness.csv"))
