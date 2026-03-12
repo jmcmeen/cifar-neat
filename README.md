@@ -39,14 +39,13 @@ Genome evaluation is parallelized across CPU cores via `multiprocessing`. Set `w
 ### Test
 
 ```bash
-python test.py
+python test.py --genome runs/.../winner-genome.pkl
 ```
 
 Loads the winner genome and evaluates it on the CIFAR-10 test split, printing overall accuracy, a confusion matrix, and per-class precision.
 
 ```bash
-python test.py --genome path/to/genome.pkl   # test a specific genome
-python test.py --config path/to/config.ini   # use a different config
+python test.py --genome runs/.../winner-genome.pkl --config path/to/config.ini
 ```
 
 ### Visualize
@@ -64,15 +63,14 @@ brew install graphviz
 ```
 
 ```bash
-python visualize.py
+python visualize.py --genome runs/.../winner-genome.pkl
 ```
 
 Outputs `network.png` showing input nodes, hidden nodes (with activation function), and output nodes with color-coded weighted connections.
 
 ```bash
-python visualize.py --genome path/to/genome.pkl   # visualize a specific genome
-python visualize.py --output my-network            # custom output filename
-python visualize.py --config path/to/config.ini    # use a different config
+python visualize.py --genome runs/.../winner-genome.pkl --output my-network
+python visualize.py --genome runs/.../winner-genome.pkl --config path/to/config.ini
 ```
 
 ## Project Structure
