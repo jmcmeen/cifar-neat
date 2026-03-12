@@ -64,8 +64,8 @@ python test.py --config path/to/config.ini   # use a different config
 
 All parameters live in `config.ini` (INI format, read directly by neat-python):
 
-| Section                 | Key settings                                                                                                    |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Section                 | Key settings                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `[Training]`            | `classes`, `image_size`, `samples_per_class`, `generations`, `winner_file`, `checkpoint_interval`, `output_dir`  |
 | `[NEAT]`                | `pop_size`, `fitness_threshold`, `fitness_criterion`                                                             |
 | `[DefaultGenome]`       | Mutation rates, weight/bias ranges, activation functions, structural mutation probabilities                      |
@@ -74,7 +74,8 @@ All parameters live in `config.ini` (INI format, read directly by neat-python):
 | `[DefaultReproduction]` | `elitism`, `survival_threshold`                                                                                  |
 
 Optional `[Training]` keys:
-- `checkpoint_interval` — generations between checkpoints (default: 100)
+
+- `checkpoint_interval` — generations between checkpoints (default: 100, set in `config.ini`)
 - `output_dir` — fixed output directory (default: auto-generated `runs/YYYYMMDD_HHMMSS`)
 
 CIFAR-10 class indices: 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 6=frog, 7=horse, 8=ship, 9=truck.
@@ -83,7 +84,7 @@ CIFAR-10 class indices: 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 
 
 Each training run creates a timestamped directory under `runs/`:
 
-```
+```text
 runs/20260312_143000/
 ├── winner-genome.pkl    # best genome
 ├── fitness.csv          # per-generation best/mean fitness
