@@ -23,9 +23,9 @@ python train.py
 This will:
 
 1. Download CIFAR-10 (first run only, saved to `./data/`)
-2. Run NEAT evolution using the parameters in `config.toml`
+2. Run NEAT evolution using the parameters in `config.ini`
 3. Save the best genome to `winner-genome.pkl`
-4. Write checkpoints every 10 generations as `neat-checkpoint-*`
+4. Write checkpoints every 100 generations as `neat-checkpoint-*`
 
 ### Test
 
@@ -41,17 +41,23 @@ To test a specific genome or checkpoint:
 python test.py --genome neat-checkpoint-50
 ```
 
+To use a different config file:
+
+```bash
+python test.py --config path/to/config.ini
+```
+
 ## Configuration
 
-All parameters live in `config.toml`:
+All parameters live in `config.ini` (INI format, read directly by neat-python):
 
-| Section               | Key settings                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| `[training]`          | `classes` (CIFAR-10 class indices), `image_size` (downscale target), `samples_per_class`, `generations` |
-| `[neat]`              | `pop_size`, `fitness_threshold`, `fitness_criterion`                                                    |
-| `[neat.genome]`       | Mutation rates, weight/bias ranges, activation functions, structural mutation probabilities             |
-| `[neat.species]`      | `compatibility_threshold` for speciation                                                                |
-| `[neat.stagnation]`   | `max_stagnation`, `species_elitism`                                                                     |
-| `[neat.reproduction]` | `elitism`, `survival_threshold`                                                                         |
+| Section                | Key settings                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| `[Training]`           | `classes` (CIFAR-10 class indices), `image_size` (downscale target), `samples_per_class`, `generations` |
+| `[NEAT]`               | `pop_size`, `fitness_threshold`, `fitness_criterion`                                                    |
+| `[DefaultGenome]`      | Mutation rates, weight/bias ranges, activation functions, structural mutation probabilities              |
+| `[DefaultSpeciesSet]`  | `compatibility_threshold` for speciation                                                                |
+| `[DefaultStagnation]`  | `max_stagnation`, `species_elitism`                                                                     |
+| `[DefaultReproduction]`| `elitism`, `survival_threshold`                                                                         |
 
 CIFAR-10 class indices: 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 6=frog, 7=horse, 8=ship, 9=truck.
