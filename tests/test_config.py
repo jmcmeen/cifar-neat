@@ -104,6 +104,7 @@ class TestLoadTrainingConfig:
         assert cfg["checkpoint_interval"] == 100  # default
         assert cfg["verbose"] == "full"  # default
         assert cfg["workers"] == 0  # default
+        assert cfg["data_dir"] == "data"  # default
         Path(path).unlink()
 
     def test_missing_file(self) -> None:
@@ -175,6 +176,16 @@ class TestLoadTrainingConfig:
         path = _write_ini(ini)
         with pytest.raises(ValueError, match="workers"):
             load_training_config(path)
+        Path(path).unlink()
+
+    def test_custom_data_dir(self) -> None:
+        ini = VALID_INI.replace(
+            "winner_file = winner.pkl",
+            "winner_file = winner.pkl\ndata_dir = /tmp/cifar",
+        )
+        path = _write_ini(ini)
+        cfg = load_training_config(path)
+        assert cfg["data_dir"] == "/tmp/cifar"
         Path(path).unlink()
 
     def test_custom_checkpoint_interval(self) -> None:

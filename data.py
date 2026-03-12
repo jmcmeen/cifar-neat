@@ -14,7 +14,7 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 CIFAR10_URL = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
-CIFAR10_DIR = Path("./data/cifar-10-batches-py")
+DEFAULT_DATA_DIR = Path("data")
 
 CIFAR10_CLASSES = [
     "airplane", "automobile", "bird", "cat", "deer",
@@ -25,9 +25,10 @@ TRAIN_BATCHES = [f"data_batch_{i}" for i in range(1, 6)]
 TEST_BATCHES = ["test_batch"]
 
 
-def _ensure_cifar10_downloaded(data_dir: Path = Path("./data")) -> None:
+def _ensure_cifar10_downloaded(data_dir: Path) -> None:
     """Download and extract CIFAR-10 if not already present."""
-    if CIFAR10_DIR.exists():
+    cifar_dir = data_dir / "cifar-10-batches-py"
+    if cifar_dir.exists():
         return
     data_dir.mkdir(parents=True, exist_ok=True)
     archive = data_dir / "cifar-10-python.tar.gz"
@@ -61,12 +62,12 @@ def _process_image(raw: np.ndarray, img_size: int) -> list[float]:
     return arr.flatten().tolist()
 
 
-def _cache_path(classes: list[int], img_size: int, train: bool) -> Path:
+def _cache_path(classes: list[int], img_size: int, train: bool, data_dir: Path) -> Path:
     """Build a deterministic cache filename from the data parameters."""
     split = "train" if train else "test"
     key = f"{split}-{sorted(classes)}-{img_size}"
     digest = hashlib.md5(key.encode()).hexdigest()[:12]  # noqa: S324
-    return Path("./data") / f"cache_{split}_{digest}.pkl"
+    return data_dir / f"cache_{split}_{digest}.pkl"
 
 
 def _load_cifar(
@@ -74,6 +75,7 @@ def _load_cifar(
     img_size: int,
     train: bool,
     max_per_class: int | None = None,
+    data_dir: Path = DEFAULT_DATA_DIR,
 ) -> tuple[list[list[float]], list[int]]:
     """Download CIFAR-10 and return downscaled grayscale arrays for chosen classes.
 
@@ -82,18 +84,20 @@ def _load_cifar(
         img_size: Target side length for square grayscale images.
         train: If True, use training split; otherwise test split.
         max_per_class: Cap per class (None = unlimited, used for test split).
+        data_dir: Directory for downloads and caches.
 
     Returns:
         Tuple of (images, labels) where images are flattened float lists.
     """
-    cache = _cache_path(classes, img_size, train)
+    cache = _cache_path(classes, img_size, train, data_dir)
     if max_per_class is None and cache.exists():
         logger.info("Loading cached dataset from %s", cache)
         with open(cache, "rb") as f:
             return pickle.load(f)  # noqa: S301
 
-    _ensure_cifar10_downloaded()
+    _ensure_cifar10_downloaded(data_dir)
 
+    cifar_dir = data_dir / "cifar-10-batches-py"
     batches = TRAIN_BATCHES if train else TEST_BATCHES
     class_map = {c: i for i, c in enumerate(classes)}
     counts = {c: 0 for c in classes}
@@ -101,7 +105,7 @@ def _load_cifar(
     labels: list[int] = []
 
     for batch_name in batches:
-        raw_images, raw_labels = _load_cifar10_batch(CIFAR10_DIR / batch_name)
+        raw_images, raw_labels = _load_cifar10_batch(cifar_dir / batch_name)
         for raw, label in zip(raw_images, raw_labels):
             if label not in class_map:
                 continue
@@ -138,19 +142,24 @@ def load_training_data(
     classes: list[int],
     img_size: int,
     samples_per_class: int,
+    data_dir: str = "data",
 ) -> tuple[list[list[float]], list[int], int]:
     """Load CIFAR-10 training subset.
 
     Returns:
         Tuple of (images, labels, num_classes).
     """
-    images, labels = _load_cifar(classes, img_size, train=True, max_per_class=samples_per_class)
+    images, labels = _load_cifar(
+        classes, img_size, train=True,
+        max_per_class=samples_per_class, data_dir=Path(data_dir),
+    )
     return images, labels, len(classes)
 
 
 def load_test_data(
     classes: list[int],
     img_size: int,
+    data_dir: str = "data",
 ) -> tuple[list[list[float]], list[int]]:
     """Load full CIFAR-10 test split for the given classes."""
-    return _load_cifar(classes, img_size, train=False)
+    return _load_cifar(classes, img_size, train=False, data_dir=Path(data_dir))

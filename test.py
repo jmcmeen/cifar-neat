@@ -90,7 +90,7 @@ def main() -> None:
         genome: Any = pickle.load(f)  # noqa: S301
 
     logger.info("Loading CIFAR-10 test set...")
-    images, labels = load_test_data(classes, training["image_size"])
+    images, labels = load_test_data(classes, training["image_size"], training["data_dir"])
     num_inputs = len(images[0])
     logger.info(
         "  %d test samples, %d inputs, %d classes", len(images), num_inputs, num_classes,

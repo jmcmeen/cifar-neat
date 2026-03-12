@@ -192,6 +192,7 @@ def run_evolution(
     logger.info("Loading CIFAR-10 subset...")
     images, labels, num_classes = load_training_data(
         training["classes"], training["image_size"], training["samples_per_class"],
+        training["data_dir"],
     )
     num_inputs = len(images[0])
     logger.info(

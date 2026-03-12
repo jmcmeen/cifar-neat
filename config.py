@@ -17,6 +17,7 @@ OPTIONAL_TRAINING_KEYS = {
     "output_dir": "",
     "verbose": "full",
     "workers": "0",
+    "data_dir": "data",
 }
 
 
@@ -32,6 +33,7 @@ class TrainingConfig(TypedDict):
     output_dir: str
     verbose: str
     workers: int
+    data_dir: str
 
 
 def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
@@ -98,6 +100,8 @@ def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
         msg = f"Invalid 'workers' value — must be 0 (auto) or a positive integer: {workers}"
         raise ValueError(msg)
 
+    data_dir = section.get("data_dir", OPTIONAL_TRAINING_KEYS["data_dir"])
+
     return TrainingConfig(
         classes=classes,
         image_size=image_size,
@@ -108,4 +112,5 @@ def load_training_config(path: str = CONFIG_PATH) -> TrainingConfig:
         output_dir=output_dir,
         verbose=verbose,
         workers=workers,
+        data_dir=data_dir,
     )
