@@ -102,6 +102,7 @@ class TestLoadTrainingConfig:
         assert cfg["generations"] == 50
         assert cfg["winner_file"] == "winner.pkl"
         assert cfg["checkpoint_interval"] == 100  # default
+        assert cfg["verbose"] == "full"  # default
         Path(path).unlink()
 
     def test_missing_file(self) -> None:
@@ -133,6 +134,26 @@ class TestLoadTrainingConfig:
         path = _write_ini(ini)
         with pytest.raises(ValueError, match="comma-separated integers"):
             load_training_config(path)
+        Path(path).unlink()
+
+    def test_invalid_verbose(self) -> None:
+        ini = VALID_INI.replace(
+            "winner_file = winner.pkl",
+            "winner_file = winner.pkl\nverbose = loud",
+        )
+        path = _write_ini(ini)
+        with pytest.raises(ValueError, match="full, brief, or quiet"):
+            load_training_config(path)
+        Path(path).unlink()
+
+    def test_custom_verbose(self) -> None:
+        ini = VALID_INI.replace(
+            "winner_file = winner.pkl",
+            "winner_file = winner.pkl\nverbose = quiet",
+        )
+        path = _write_ini(ini)
+        cfg = load_training_config(path)
+        assert cfg["verbose"] == "quiet"
         Path(path).unlink()
 
     def test_custom_checkpoint_interval(self) -> None:
