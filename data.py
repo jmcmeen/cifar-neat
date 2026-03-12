@@ -5,6 +5,7 @@ import logging
 import pickle
 import tarfile
 import urllib.request
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -41,7 +42,9 @@ def _ensure_cifar10_downloaded(data_dir: Path = Path("./data")) -> None:
 def _load_cifar10_batch(path: Path) -> tuple[np.ndarray, list[int]]:
     """Load a single CIFAR-10 batch file (pickle format)."""
     with open(path, "rb") as f:
-        batch = pickle.load(f, encoding="bytes")  # noqa: S301
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="dtype.*align", category=DeprecationWarning)
+            batch = pickle.load(f, encoding="bytes")  # noqa: S301
     images: np.ndarray = batch[b"data"]
     labels: list[int] = batch[b"labels"]
     return images, labels
