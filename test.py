@@ -2,13 +2,16 @@
 
 import argparse
 import pickle
+from typing import Any
 
 import neat
-import numpy as np
 import torchvision
 import torchvision.transforms as transforms
+from torch import Tensor
 
-from train import build_neat_config, load_config
+from train import CONFIG_PATH, load_training_config
+
+TrainingConfig = dict[str, Any]
 
 CIFAR10_CLASSES = [
     "airplane", "automobile", "bird", "cat", "deer",
@@ -16,10 +19,12 @@ CIFAR10_CLASSES = [
 ]
 
 
-def load_test_data(cfg):
+def load_test_data(
+    training: TrainingConfig,
+) -> tuple[list[list[float]], list[int]]:
     """Load the CIFAR-10 test split for the configured classes."""
-    classes = cfg["training"]["classes"]
-    img_size = cfg["training"]["image_size"]
+    classes: list[int] = training["classes"]
+    img_size: int = training["image_size"]
 
     transform = transforms.Compose([
         transforms.Grayscale(),
@@ -32,21 +37,28 @@ def load_test_data(cfg):
     )
 
     class_map = {c: i for i, c in enumerate(classes)}
-    images, labels = [], []
+    images: list[list[float]] = []
+    labels: list[int] = []
 
     for img, label in dataset:
         if label in class_map:
+            assert isinstance(img, Tensor)
             images.append(img.numpy().flatten().tolist())
             labels.append(class_map[label])
 
     return images, labels
 
 
-def evaluate(net, images, labels, num_classes):
+def evaluate(
+    net: neat.nn.FeedForwardNetwork,
+    images: list[list[float]],
+    labels: list[int],
+    num_classes: int,
+) -> tuple[float, list[list[int]]]:
     """Compute accuracy and per-class metrics."""
     correct = 0
     # Confusion matrix: confusion[true][predicted]
-    confusion = [[0] * num_classes for _ in range(num_classes)]
+    confusion: list[list[int]] = [[0] * num_classes for _ in range(num_classes)]
 
     for img, label in zip(images, labels):
         output = net.activate(img)
@@ -59,32 +71,45 @@ def evaluate(net, images, labels, num_classes):
     return accuracy, confusion
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Test a trained NEAT classifier on CIFAR-10")
-    parser.add_argument("--config", default="config.toml", help="Path to TOML config file")
-    parser.add_argument("--genome", default=None, help="Path to saved genome (overrides config)")
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Test a trained NEAT classifier on CIFAR-10",
+    )
+    parser.add_argument(
+        "--config", default=CONFIG_PATH, help="Path to INI config file",
+    )
+    parser.add_argument(
+        "--genome", default=None, help="Path to saved genome (overrides config)",
+    )
     args = parser.parse_args()
 
-    cfg = load_config(args.config)
-    training = cfg["training"]
-    classes = training["classes"]
+    training = load_training_config(args.config)
+    classes: list[int] = training["classes"]
     num_classes = len(classes)
     class_names = [CIFAR10_CLASSES[i] for i in classes]
 
     # Load genome
-    genome_path = args.genome or training["winner_file"]
+    genome_path: str = args.genome or training["winner_file"]
     print(f"Loading genome from {genome_path}...")
     with open(genome_path, "rb") as f:
-        genome = pickle.load(f)
+        genome = pickle.load(f)  # noqa: S301
 
     # Load test data
     print("Loading CIFAR-10 test set...")
-    images, labels = load_test_data(cfg)
+    images, labels = load_test_data(training)
     num_inputs = len(images[0])
     print(f"  {len(images)} test samples, {num_inputs} inputs, {num_classes} classes")
 
     # Build network from genome
-    neat_config = build_neat_config(cfg, num_inputs, num_classes)
+    neat_config = neat.Config(
+        neat.DefaultGenome,
+        neat.DefaultReproduction,
+        neat.DefaultSpeciesSet,
+        neat.DefaultStagnation,
+        args.config,
+    )
+    neat_config.genome_config.num_inputs = num_inputs
+    neat_config.genome_config.num_outputs = num_classes
     net = neat.nn.FeedForwardNetwork.create(genome, neat_config)
 
     # Evaluate
