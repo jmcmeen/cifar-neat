@@ -6,7 +6,7 @@ NEAT evolves neural network topology and weights simultaneously through a geneti
 
 ## Setup
 
-Requires Python 3.12+.
+Requires Python 3.11+.
 
 ```bash
 pip install -r requirements.txt
@@ -64,19 +64,20 @@ python test.py --config path/to/config.ini   # use a different config
 
 All parameters live in `config.ini` (INI format, read directly by neat-python):
 
-| Section                 | Key settings                                                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `[Training]`            | `classes`, `image_size`, `samples_per_class`, `generations`, `winner_file`, `checkpoint_interval`, `output_dir`  |
-| `[NEAT]`                | `pop_size`, `fitness_threshold`, `fitness_criterion`                                                             |
-| `[DefaultGenome]`       | Mutation rates, weight/bias ranges, activation functions, structural mutation probabilities                      |
-| `[DefaultSpeciesSet]`   | `compatibility_threshold` for speciation                                                                         |
-| `[DefaultStagnation]`   | `max_stagnation`, `species_elitism`                                                                              |
-| `[DefaultReproduction]` | `elitism`, `survival_threshold`                                                                                  |
+| Section                 | Key settings                                                                                                                |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `[Training]`            | `classes`, `image_size`, `samples_per_class`, `generations`, `winner_file`, `checkpoint_interval`, `output_dir`, `verbose`  |
+| `[NEAT]`                | `pop_size`, `fitness_threshold`, `fitness_criterion`                                                                        |
+| `[DefaultGenome]`       | Mutation rates, weight/bias ranges, activation functions, structural mutation probabilities                                 |
+| `[DefaultSpeciesSet]`   | `compatibility_threshold` for speciation                                                                                    |
+| `[DefaultStagnation]`   | `max_stagnation`, `species_elitism`                                                                                         |
+| `[DefaultReproduction]` | `elitism`, `survival_threshold`                                                                                             |
 
 Optional `[Training]` keys:
 
 - `checkpoint_interval` — generations between checkpoints (default: 100, set in `config.ini`)
 - `output_dir` — fixed output directory (default: auto-generated `runs/YYYYMMDD_HHMMSS`)
+- `verbose` — NEAT stdout reporter verbosity: `full`, `brief`, or `quiet` (default: `full`)
 
 CIFAR-10 class indices: 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 6=frog, 7=horse, 8=ship, 9=truck.
 
